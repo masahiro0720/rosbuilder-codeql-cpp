@@ -1,6 +1,6 @@
+
 name: ROSBuilder C++ CodeQL - Manual Build (Jazzy)
 
-# Only start this workflow with the Run workflow button.
 on:
   workflow_dispatch:
 
@@ -12,14 +12,35 @@ jobs:
   analyze-manual:
     name: CodeQL C++ (manual / Jazzy)
     runs-on: ubuntu-24.04
+
+    container:
+      image: ros:jazzy-ros-base-noble
+
     steps:
+      - name: Install build tools
+        shell: bash
+        run: |
+          set -euo pipefail
+          apt-get update -o Acquire::Retries=3
+          DEBIAN_FRONTEND=noninteractive apt-get install -y --no-install-recommends \
+            git \
+            build-essential \
+            cmake \
+            python3-colcon-common-extensions \
+            ros-jazzy-rclcpp-lifecycle \
+            ros-jazzy-lifecycle-msgs
+
       - name: Checkout repository
         uses: actions/checkout@v4
 
-      - name: Set up ROS 2 Jazzy
-        uses: ros-tooling/setup-ros@v0.7
-        with:
-          required-ros-distributions: jazzy
+      - name: Verify ROS 2 Jazzy
+        shell: bash
+        run: |
+          set -euo pipefail
+          source /opt/ros/jazzy/setup.bash
+          echo "ROS_DISTRO=$ROS_DISTRO"
+          command -v colcon
+          ros2 pkg prefix rclcpp_lifecycle
 
       - name: Initialize CodeQL (manual build)
         uses: github/codeql-action/init@v4
@@ -32,7 +53,9 @@ jobs:
         run: |
           set -euo pipefail
           source /opt/ros/jazzy/setup.bash
+
           colcon list --base-paths .
+
           colcon build --base-paths . \
             --packages-select eval1_minimal_cpp_pkg eval1_minimal_cpp_pkg_interfaces \
             --event-handlers console_direct+
