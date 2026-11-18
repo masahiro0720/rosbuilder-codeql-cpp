@@ -1,0 +1,43 @@
+name: ROSBuilder C++ CodeQL - Manual Build (Jazzy)
+
+# Only start this workflow with the Run workflow button.
+on:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  security-events: write
+
+jobs:
+  analyze-manual:
+    name: CodeQL C++ (manual / Jazzy)
+    runs-on: ubuntu-24.04
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Set up ROS 2 Jazzy
+        uses: ros-tooling/setup-ros@v0.7
+        with:
+          required-ros-distributions: jazzy
+
+      - name: Initialize CodeQL (manual build)
+        uses: github/codeql-action/init@v4
+        with:
+          languages: c-cpp
+          build-mode: manual
+
+      - name: Build ROS 2 packages while CodeQL traces compilation
+        shell: bash
+        run: |
+          set -euo pipefail
+          source /opt/ros/jazzy/setup.bash
+          colcon list --base-paths .
+          colcon build --base-paths . \
+            --packages-select eval1_minimal_cpp_pkg eval1_minimal_cpp_pkg_interfaces \
+            --event-handlers console_direct+
+
+      - name: Perform CodeQL Analysis
+        uses: github/codeql-action/analyze@v4
+        with:
+          category: rosbuilder-cpp-manual
