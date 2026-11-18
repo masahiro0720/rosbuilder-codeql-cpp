@@ -1,0 +1,30 @@
+
+name: ROSBuilder C++ CodeQL - No Build
+
+on:
+  push:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  security-events: write
+
+jobs:
+  analyze-none:
+    name: CodeQL C++ (none)
+    runs-on: ubuntu-24.04
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Initialize CodeQL (no build)
+        uses: github/codeql-action/init@v4
+        with:
+          languages: c-cpp
+          build-mode: none
+
+      - name: Perform CodeQL Analysis
+        uses: github/codeql-action/analyze@v4
+        with:
+          category: rosbuilder-cpp-none
